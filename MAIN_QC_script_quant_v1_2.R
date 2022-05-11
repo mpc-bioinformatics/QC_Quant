@@ -184,7 +184,6 @@ library(scales)     ### for colours
 library(matrixStats)### e.g. for rowVars used in PCA plot function
 library(cowplot)
 library(affy)       ### for MA-Plots
-library(ggplus)     ### used in histogram function
 library(beepr)      ### for sound after completion of MA-Plots
 
 setwd(path)
