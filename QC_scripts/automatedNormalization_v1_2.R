@@ -29,7 +29,6 @@ automatedNormalization <- function(DATA, DATA.name = deparse(substitute(DATA)),
       DATA_norm <- do.call(fun, args)
       DATA_norm <- as.data.frame(DATA_norm)
     } else {
-      print("x")
       DATA_split <- split.default(DATA, group)
       DATA_split_norm <- lapply(DATA_split, limma::normalizeBetweenArrays, method = args$method)
       DATA_norm <- do.call(cbind, DATA_split_norm)
