@@ -192,7 +192,6 @@ source(paste0(RScript_path, "PCA_plot_v1_2.R"))
 source(paste0(RScript_path, "MA_Plots_v1_2.R"))
 source(paste0(RScript_path, "ValidValue_Plot_v1_2.R"))
 source(paste0(RScript_path, "Boxplot_v1_2.R"))
-source(paste0(RScript_path, "Histograms_v1_2.R"))
 source(paste0(RScript_path, "automatedNormalization_v1_2.R"))
 
 
