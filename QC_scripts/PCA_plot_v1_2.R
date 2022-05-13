@@ -23,7 +23,8 @@
 # normalization: determines suffix for file name
 # xlim, ylim: optional x and y axis limits
 
-PCA_Plot <- function(X, log_data = TRUE, log_base = 2,
+
+PCA_Plot <- function(X, id, log_data = TRUE, log_base = 2,
                      impute, impute_method = "mean", propNA = 0,
                      scale. = TRUE,
                      groupvar1, groupvar2 = NULL, groupvar1_name, groupvar2_name = NULL,
@@ -31,14 +32,14 @@ PCA_Plot <- function(X, log_data = TRUE, log_base = 2,
                      group_colours = NULL, returnPCA = FALSE, title = NULL,
                      plot_device = "pdf", plot_height = 10, plot_width = 10, plot_dpi = 300,
                      output_path = "", suffix = "nonorm", xlim = NULL, ylim = NULL,
-                     label = FALSE, legend.position = "right") {
+                     label = FALSE, PCx = 1, PCy = 2) {
 
   require(ggplot2)
   require(matrixStats)
   require(cowplot)
   require(ggrepel)
 
-
+  use_groups <- !is.null(groupvar1)
 
   if (log_data) {
     X <- log(X, base = log_base)
@@ -50,20 +51,20 @@ PCA_Plot <- function(X, log_data = TRUE, log_base = 2,
   ### remove rows with too many missing values
   X_2 <- X[mean_NA <= propNA, ]
 
-
   ## perform imputation
   if (impute) {
-  X_3 <- as.data.frame(t(apply(X_2, 1, function(x) {
-    if(anyNA(x)) {
-      x[is.na(x)] <- switch(impute_method, mean = mean(x, na.rm = TRUE),
-                            median = median(x, na.rm = TRUE))
-    }
-    return(x)
-  })))
+    X_3 <- as.data.frame(t(apply(X_2, 1, function(x) {
+      if(anyNA(x)) {
+        x[is.na(x)] <- switch(impute_method, mean = mean(x, na.rm = TRUE),
+                              median = median(x, na.rm = TRUE))
+      }
+      return(x)
+    })))
   } else {
     X_3 <- na.omit(X_2)
   }
 
+  X_3 <<- X_3
 
   ### remove proteins/peptides with a constant value (variance near zero)
   v <- matrixStats::rowVars(as.matrix(X_3))
@@ -72,70 +73,69 @@ PCA_Plot <- function(X, log_data = TRUE, log_base = 2,
 
   print(paste0(nrow(X_3), " of ", nrow(X), " rows are used for PCA."))
 
-
   ### calculate PCA
   pca <- prcomp(t(X_3), scale. = scale.)
   pred <- predict(pca, t(X_3))
-  summ <<- summary(pca)
+  summ <- summary(pca)
 
   var50 <- which(summ$importance[3,] >= 0.5)[1]
   print(paste0("50% explained variance is reached with ", var50, " principle components."))
 
-
   ### version with colour and shape
-  if (!is.null(groupvar2)) {
-    #print(groupvar2)
-
-    D_PCA <- data.frame(pred[,c(1,2)], groupvar1 = groupvar1, groupvar2 = groupvar2)
-    colnames(D_PCA)[1:2] <- c("PC1", "PC2")
-
-    pl <- ggplot(data = D_PCA, aes(x=PC1, y=PC2)) +
-      geom_point(aes(colour = groupvar1, shape = groupvar2), size = point.size) +
-      theme_bw(base_size = base_size) +
-      xlab(paste0("PC1 (", round(100*summ$importance[2,1], 1), "%)")) +
-      ylab(paste0("PC2 (", round(100*summ$importance[2,2], 1), "%)"))
+  if (!is.null(groupvar1) & !is.null(groupvar2)) {
+    D_PCA <- data.frame(pred[,c(PCx,PCy)], groupvar1 = groupvar1, groupvar2 = groupvar2)
+    colnames(D_PCA)[1:2] <- c("PCx", "PCy")
+    pl <- ggplot(data = D_PCA, aes(x=PCx, y=PCy)) +
+      geom_point(aes(colour = groupvar1, shape = groupvar2), size = point.size)
     pl <- pl + labs(colour = groupvar1_name, shape = groupvar2_name)
     if (!is.null(group_colours)) pl <- pl + scale_colour_manual(values = group_colours)
     ### more than 6 different shapes will otherwise give an error message:
     if (nlevels(D_PCA$groupvar2) > 6) pl <- pl + scale_shape_manual(values = 1:nlevels(D$groupvar2))
-  } else {
-
+  }
 
   ### version with only colour
-    D_PCA <<- data.frame(pred[,c(1,2)], groupvar1 = groupvar1, label = colnames(X_3))
-    colnames(D_PCA)[1:2] <- c("PC1", "PC2")
-
-    pl <- ggplot(data = D_PCA, aes(x=PC1, y=PC2)) +
-      geom_point(aes(colour = groupvar1), size = point.size) +
-      theme_bw(base_size = base_size) +
-      theme(legend.position = legend.position) +
-      xlab(paste0("PC1 (", round(100*summ$importance[2,1], 1), "%)")) +
-      ylab(paste0("PC2 (", round(100*summ$importance[2,2], 1), "%)"))
-
-
-
-    pl <- pl + labs(colour = groupvar1_name) #+ coord_cartesian(...)
+  if (!is.null(groupvar1) & is.null(groupvar2)) {
+    D_PCA <- data.frame(pred[,c(PCx,PCy)], groupvar1 = groupvar1, label = colnames(X_3))
+    colnames(D_PCA)[1:2] <- c("PCx", "PCy")
+    pl <- ggplot(data = D_PCA, aes(x=PCx, y=PCy)) +
+      geom_point(aes(colour = groupvar1), size = point.size)
+    pl <- pl + labs(colour = groupvar1_name)
     if (!is.null(group_colours)) pl <- pl + scale_colour_manual(values = group_colours)
-    if(label) pl <- pl + geom_text_repel(aes(x=PC1, y=PC2, label = label, colour = groupvar1))
+    if(label) pl <- pl + geom_text_repel(aes(x=PCx, y=PCy, label = label, colour = groupvar1))
   }
+
+
+  ### version without colour or shape
+  if (is.null(groupvar1) & is.null(groupvar2)) {
+    D_PCA <- data.frame(pred[,c(PCx,PCy)], label = colnames(X_3))
+    colnames(D_PCA)[1:2] <- c("PCx", "PCy")
+    pl <- ggplot(data = D_PCA, aes(x=PCx, y=PCy)) +
+      geom_point(size = point.size)
+    if(label) pl <- pl + geom_text_repel(aes(x=PCx, y=PCy, label = label))
+  }
+
+  pl <- pl + theme_bw(base_size = base_size) +
+    xlab(paste0("PC", PCx, " (", round(100*summ$importance[2,PCx], 1), "%)")) +
+    ylab(paste0("PC", PCy, " (", round(100*summ$importance[2,PCy], 1), "%)"))
 
   ### add plot title
   if (!is.null(title)) {
     pl <- pl + ggtitle(title)
   }
 
-
   ### add xlim and ylim if specified
   if (!is.null(xlim)) pl <- pl + xlim(xlim)
-  if (!is.null(ylim)) pl <- pl + ylim(ylim)
+  if (!is.null(ylim)) pl <- pl + xlim(ylim)
 
+  #print(pl)
 
-  ggsave(paste0(output_path, "PCA_plot_", suffix, ".",plot_device),
-         device = plot_device,plot = pl, dpi = plot_dpi,height = plot_height,
+  ggsave(paste0(output_path, "PCA_plot_", suffix, ".", plot_device),
+         device = plot_device, plot = pl, dpi = plot_dpi, height = plot_height,
          width = plot_width, units = "cm")
 
   if (returnPCA) {
-    return(list(pl = pl, D_PCA = cbind(D_PCA, Sample = colnames(X))))
+    return(list(pl = pl, D_PCA_plot = cbind(D_PCA, Sample = colnames(X)), pca = pca))#,
+    # D_PCA = cbind(id3, X_3)))
   } else {
     return(pl)
   }
