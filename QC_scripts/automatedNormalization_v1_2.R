@@ -41,6 +41,7 @@ automatedNormalization <- function(DATA, DATA.name = deparse(substitute(DATA)),
     }
 
     tryCatch(expr = {
+      DATA_norm_2 <- as.data.frame(DATA_norm_2)
       write.xlsx(x = DATA_norm_2, file = paste0(output_path, DATA.name, "_", suffix, ".xlsx"), keepNA = TRUE)
       message("Normalized data successfully saved!")},
       error = function(err) {
@@ -49,6 +50,7 @@ automatedNormalization <- function(DATA, DATA.name = deparse(substitute(DATA)),
         beepr::beep(sound = 10)
         user_input <- readline(prompt = paste0("+++ Do you want to overwrite ", paste0(DATA.name,"_",method,".xlsx"), "? +++ [yes/no] "))
         if(user_input == "yes"){
+          DATA_norm_2 <- as.data.frame(DATA_norm_2)
           write.xlsx(x = DATA_norm_2, file = paste0(output_path, DATA.name,"_",suffix,".xlsx"), overwrite = TRUE, keepNA = TRUE)
           message("Normalized data successfully saved!")
         } else {
@@ -61,6 +63,8 @@ automatedNormalization <- function(DATA, DATA.name = deparse(substitute(DATA)),
     if (length(id_columns) >= 1 ) {
       DATA_norm_2 <- cbind(id_columns, DATA_norm)
     }
+    DATA_norm_2 <- as.data.frame(DATA_norm_2)
+
     write.xlsx(x = DATA_norm_2, file = paste0(output_path, DATA.name, "_", suffix, ".xlsx"), keepNA = TRUE)
   }
 
