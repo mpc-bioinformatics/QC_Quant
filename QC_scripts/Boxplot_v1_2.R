@@ -5,7 +5,7 @@ Boxplots <- function(X, groupvar_name = "Group", sample_filter = NULL,
                      plot_device = "pdf", suffix = "nonorm",
                      plot_height = 10, plot_width = 15, plot_dpi = 300,
                      log_data = FALSE, log_base = 2, group_colours = NULL,
-                     method = "boxplot", base_size = 20){
+                     method = "boxplot", base_size = 20, ...){
 
   require(ggplot2)
   require(tidyverse)
@@ -32,7 +32,7 @@ Boxplots <- function(X, groupvar_name = "Group", sample_filter = NULL,
 
   pl_boxplot <- pl_boxplot +
     theme_bw(base_size = base_size) +
-    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), ...) +
     ylab("Log intensity") + xlab("Sample")
 
   if (method != "boxplot"){
