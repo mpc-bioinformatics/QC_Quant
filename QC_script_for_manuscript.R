@@ -6,7 +6,7 @@ library(tidyverse)
 library(ggplot2)
 library(ComplexHeatmap)
 
-path <- ""
+path <- ""  ## add path to data set here
 setwd(path)
 
 data_path <- "proteinGroups.txt"
@@ -44,7 +44,7 @@ normalization = "nonorm" #"nonorm
 suffix <- normalization
 
 group <- c(rep("Std_in_sol", 5), rep("Rapid_in_sol", 5), rep("Std_FASP", 5), rep("Rapid_FASP", 5))
-group <- factor(group)
+group <- factor(group, levels = c("Std_in_sol", "Rapid_in_sol", "Std_FASP", "Rapid_FASP"))
 group_colours <- c("#00BFC4", "deeppink", "darkgoldenrod1", "#7CAE00")
 
 
@@ -121,38 +121,32 @@ if (is.null(group_colours) & nr_groups >= 1) group_colours <- scales::hue_pal()(
 
 
 ### normalize data:
-D_median <- automatedNormalization(DATA = D_RI, method = "median", log = FALSE,
-                            id_columns = id, output_path = output_path, suffix = "median_proteins")
-D_quantile <- automatedNormalization(DATA = D_RI, method = "quantile", log = FALSE,
-                                   id_columns = id, output_path = output_path, suffix = "quantile_proteins")
-D_loess <- automatedNormalization(DATA = D_RI, method = "loess", log = FALSE,
-                                   id_columns = id, output_path = output_path, suffix = "loess_proteins")
 D_loess_gw <- automatedNormalization(DATA = D_RI, method = "loess", log = FALSE,
                                   id_columns = id, output_path = output_path, suffix = "loess_proteins_gw",
                                   groupwise = TRUE, group = group)
-D_loess_gw <- data.frame(D_loess_gw[, c(16:20, 6:10, 11:15, 1:5)])
+D_loess_gw <- data.frame(D_loess_gw)
 D_median_gw <- automatedNormalization(DATA = D_RI, method = "median", log = FALSE,
                                      id_columns = id, output_path = output_path, suffix = "median_proteins_gw",
                                      groupwise = TRUE, group = group)
-D_median_gw <- data.frame(D_median_gw[, c(16:20, 6:10, 11:15, 1:5)])
+D_median_gw <- data.frame(D_median_gw)
 D_quantile_gw <- automatedNormalization(DATA = D_RI, method = "quantile", log = FALSE,
                                       id_columns = id, output_path = output_path, suffix = "quantile_proteins_gw",
                                       groupwise = TRUE, group = group)
-D_quantile_gw <- data.frame(D_quantile_gw[, c(16:20, 6:10, 11:15, 1:5)])
+D_quantile_gw <- data.frame(D_quantile_gw)
 
 
 ### convert data to long format
 to_long_format <- function(D) {
   D_long <- pivot_longer(data = D, cols = 1:ncol(D))
-  D_long$group <- factor(substr(D_long$name, 1, nchar(D_long$name)-2))
+  D_long$group <- factor(substr(D_long$name, 1, nchar(D_long$name)-2),
+                         levels = c("Std_in_sol","Rapid_in_sol", "Std_FASP", "Rapid_FASP"))
+  D_long$name <- factor(D_long$name,
+                        levels = c(paste0("Std_in_sol_", 1:5), paste0("Rapid_in_sol_", 1:5), paste0("Std_FASP_", 1:5), paste0("Rapid_FASP_", 1:5)))
   return(D_long)
 }
 
 D_LFQ_long <- to_long_format(D_LFQ)
 D_RI_long <- to_long_format(D_RI)
-D_median_long <- to_long_format(D_median)
-D_quantile_long <- to_long_format(D_quantile)
-D_loess_long <- to_long_format(D_loess)
 D_loess_gw_long <- to_long_format(D_loess_gw)
 D_median_gw_long <- to_long_format(D_median_gw)
 D_quantile_gw_long <- to_long_format(D_quantile_gw)
@@ -183,16 +177,6 @@ PCA_LFQ <- PCA_Plot(X = D_LFQ, groupvar1 = group, groupvar2 = NULL,
                           output_path = output_path, suffix = "LFQ_proteins",
                           ylim = plot_ylim_PCA, xlim = plot_xlim_PCA)
 
-PCA_loess <- PCA_Plot(X = D_loess, groupvar1 = group, groupvar2 = NULL,
-                    groupvar1_name = groupvar_name, groupvar2_name = NULL,
-                    plot_device = plot_device, group_colours = group_colours,
-                    plot_height = plot_height_PCA, plot_width = plot_width_PCA,
-                    log_data = FALSE, log_base = log_base,  scale. = TRUE,
-                    impute = FALSE, impute_method = "mean", propNA = 0,
-                    point.size = 4, base_size = 20,
-                    returnPCA = FALSE, title = NULL,
-                    output_path = output_path, suffix = "loess_proteins",
-                    ylim = plot_ylim_PCA, xlim = plot_xlim_PCA)
 
 PCA_loess_gw <- PCA_Plot(X = D_loess_gw, groupvar1 = group, groupvar2 = NULL,
                       groupvar1_name = groupvar_name, groupvar2_name = NULL,
@@ -203,18 +187,6 @@ PCA_loess_gw <- PCA_Plot(X = D_loess_gw, groupvar1 = group, groupvar2 = NULL,
                       point.size = 4, base_size = 20,
                       returnPCA = FALSE, title = NULL,
                       output_path = output_path, suffix = "loess_proteins_gw",
-                      ylim = plot_ylim_PCA, xlim = plot_xlim_PCA)
-
-
-PCA_median <- PCA_Plot(X = D_median, groupvar1 = group, groupvar2 = NULL,
-                      groupvar1_name = groupvar_name, groupvar2_name = NULL,
-                      plot_device = plot_device, group_colours = group_colours,
-                      plot_height = plot_height_PCA, plot_width = plot_width_PCA,
-                      log_data = FALSE, log_base = log_base,  scale. = TRUE,
-                      impute = FALSE, impute_method = "mean", propNA = 0,
-                      point.size = 4, base_size = 20,
-                      returnPCA = FALSE, title = NULL,
-                      output_path = output_path, suffix = "median_proteins",
                       ylim = plot_ylim_PCA, xlim = plot_xlim_PCA)
 
 PCA_median_gw <- PCA_Plot(X = D_median_gw, groupvar1 = group, groupvar2 = NULL,
@@ -228,19 +200,6 @@ PCA_median_gw <- PCA_Plot(X = D_median_gw, groupvar1 = group, groupvar2 = NULL,
                          output_path = output_path, suffix = "median_proteins_gw",
                          ylim = plot_ylim_PCA, xlim = plot_xlim_PCA)
 
-
-
-PCA_quantile <- PCA_Plot(X = D_quantile, groupvar1 = group, groupvar2 = NULL,
-                       groupvar1_name = groupvar_name, groupvar2_name = NULL,
-                       plot_device = plot_device, group_colours = group_colours,
-                       plot_height = plot_height_PCA, plot_width = plot_width_PCA,
-                       log_data = FALSE, log_base = log_base,  scale. = TRUE,
-                       impute = FALSE, impute_method = "mean", propNA = 0,
-                       point.size = 4, base_size = 20,
-                       returnPCA = FALSE, title = NULL,
-                       output_path = output_path, suffix = "quantile_proteins",
-                       ylim = plot_ylim_PCA, xlim = plot_xlim_PCA)
-
 PCA_quantile_gw <- PCA_Plot(X = D_quantile_gw, groupvar1 = group, groupvar2 = NULL,
                           groupvar1_name = groupvar_name, groupvar2_name = NULL,
                           plot_device = plot_device, group_colours = group_colours,
@@ -251,9 +210,6 @@ PCA_quantile_gw <- PCA_Plot(X = D_quantile_gw, groupvar1 = group, groupvar2 = NU
                           returnPCA = FALSE, title = NULL,
                           output_path = output_path, suffix = "quantile_proteins_gw",
                           ylim = plot_ylim_PCA, xlim = plot_xlim_PCA)
-
-
-
 
 
 ################################################################################
@@ -289,47 +245,43 @@ bp_RI <- Boxplots(X = D_RI_long, groupvar_name = groupvar_name, sample_filter = 
          plot_device = plot_device, group_colours = group_colours,
          plot_height = plot_height_boxplots, plot_width = plot_width_boxplots,
          plot_dpi = plot_dpi, log_data = FALSE, log_base = log_base,
-         suffix = "nonorm_proteins", method = "boxplot", base_size = 25)
+         suffix = "nonorm_proteins", method = "boxplot", base_size = 25, legend.key.size = unit(1.5, 'lines'))
 
 bp_LFQ <- Boxplots(X = D_LFQ_long, groupvar_name = groupvar_name, sample_filter = sample_filter,
                    plot_device = plot_device, group_colours = group_colours,
                    plot_height = plot_height_boxplots, plot_width = plot_width_boxplots,
                    plot_dpi = plot_dpi, log_data = FALSE, log_base = log_base,
-                   suffix = "LFQ_proteins", method = "boxplot", base_size = 25)
+                   suffix = "LFQ_proteins", method = "boxplot", base_size = 25, legend.key.size = unit(1.5, 'lines'))
 
 bp_loess_gw <- Boxplots(X = D_loess_gw_long, groupvar_name = groupvar_name, sample_filter = sample_filter,
                   plot_device = plot_device, group_colours = group_colours,
                   plot_height = plot_height_boxplots, plot_width = plot_width_boxplots,
                   plot_dpi = plot_dpi, log_data = FALSE, log_base = log_base,
-                  suffix = "loess_proteins_gw", method = "boxplot", base_size = 25)
+                  suffix = "loess_proteins_gw", method = "boxplot", base_size = 25, legend.key.size = unit(1.5, 'lines'))
 
 bp_median_gw <- Boxplots(X = D_median_gw_long, groupvar_name = groupvar_name, sample_filter = sample_filter,
                         plot_device = plot_device, group_colours = group_colours,
                         plot_height = plot_height_boxplots, plot_width = plot_width_boxplots,
                         plot_dpi = plot_dpi, log_data = FALSE, log_base = log_base,
-                        suffix = "median_proteins_gw", method = "boxplot", base_size = 25)
+                        suffix = "median_proteins_gw", method = "boxplot", base_size = 25, legend.key.size = unit(1.5, 'lines'))
 
 bp_quantile_gw <- Boxplots(X = D_quantile_gw_long, groupvar_name = groupvar_name, sample_filter = sample_filter,
                         plot_device = plot_device, group_colours = group_colours,
                         plot_height = plot_height_boxplots, plot_width = plot_width_boxplots,
                         plot_dpi = plot_dpi, log_data = FALSE, log_base = log_base,
-                        suffix = "quantile_proteins_gw", method = "boxplot", base_size = 25)
+                        suffix = "quantile_proteins_gw", method = "boxplot", base_size = 25, legend.key.size = unit(1.5, 'lines'))
 
 ################################################################################
 ### MA-Plots
 
-#pdf(paste0(output_path, "MAPlots_RawIntensities_proteins.pdf"), height = 6, width = 6)
 MAPlots(X = D_RI, log = TRUE, alpha = FALSE, output_path = output_path,
         suffix = "RawIntensities_proteins")
-#dev.off()
 
 MAPlots(X = D_LFQ, log = TRUE, alpha = FALSE, output_path = output_path,
         suffix = "LFQ_proteins")
 
-
 MAPlots(X = D_loess_gw, log = TRUE, alpha = FALSE, output_path = output_path,
         suffix = "loess_proteins_gw")
-
 
 MAPlots(X = D_median_gw, log = TRUE, alpha = FALSE, output_path = output_path,
         suffix = "median_proteins_gw")
