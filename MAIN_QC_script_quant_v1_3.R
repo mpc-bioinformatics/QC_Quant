@@ -187,6 +187,7 @@ setwd(path)
 
 source(paste0(RScript_path, "PCA_plot_v1_3.R"))
 source(paste0(RScript_path, "MA_Plots_v1_3.R"))
+source(paste0(RScript_path, "Boxplots_v1_3.R"))
 source(paste0(RScript_path, "ValidValue_Plot_v1_3.R"))
 source(paste0(RScript_path, "automatedNormalization_v1_3.R"))
 
