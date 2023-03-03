@@ -99,7 +99,7 @@ PCA_Plot <- function(X, id, log_data = TRUE, log_base = 2,
 
   ### version with colour and shape
   if (!is.null(groupvar1) & !is.null(groupvar2)) {
-    D_PCA <- data.frame(pred[,c(PCx,PCy)], groupvar1 = groupvar1, groupvar2 = groupvar2)
+    D_PCA <- data.frame(pred[,c(PCx,PCy)], groupvar1 = groupvar1, groupvar2 = groupvar2, label = colnames(X_3))
     colnames(D_PCA)[1:2] <- c("PCx", "PCy")
     pl <- ggplot(data = D_PCA, aes(x=PCx, y=PCy)) +
       geom_point(aes(colour = groupvar1, shape = groupvar2), size = point.size)
