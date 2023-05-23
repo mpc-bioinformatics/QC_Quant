@@ -73,8 +73,8 @@ output_path <- "QC_results/"
 RScript_path <- "QC_scripts/"
 
 ### check if output path exists
-if (!dir.exists(paste0(path, output_path))){
-  dir.create(paste0(path, output_path))
+if (!dir.exists(paste0(output_path))){
+  dir.create(paste0(output_path))
 }
 ###
 
